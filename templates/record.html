@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Make Note for {{ branch }} - {{ account }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Make a Note for {{ branch }} - {{ account }}</h2>
+        <p>Report Date: {{ report_date }}</p>
+        <form method="post">
+            <div class="form-group">
+                <label for="note">Note Details</label>
+                <textarea class="form-control" id="note" name="note" rows="4" placeholder="Enter reason/acknowledgment for mismatch...">{{ note }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Note</button>
+            <a href="{{ url_for('index', report_date=report_date) }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>

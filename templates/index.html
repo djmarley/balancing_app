@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teller Cash Recon</title>
+  <!-- Bootstrap CSS CDN -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .match {
+      background-color: #eef8f0; /* Light green */
+    }
+    .mismatch {
+      background-color: #f8d7da; /* Light red */
+    }
+    .card-header button {
+      text-decoration: none;
+      font-size: 1.25rem;
+    }
+    .branch-header .col {
+      display: flex;
+      align-items: center;
+    }
+    .report-date {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Bar with Dynamic Report Date -->
+  <div class="container position-relative mt-3">
+    <div class="report-date position-absolute" style="top: 15px; right: 15px;">
+      <form action="{{ url_for('index') }}" method="get" class="form-inline">
+        <label for="report_date" class="mr-2"><strong>Select Date:</strong></label>
+        <input type="date" class="form-control mr-2" id="report_date" name="report_date" value="{{ report_date }}">
+        <button type="submit" class="btn btn-primary">Load Data</button>
+      </form>
+    </div>
+    <h1 class="text-center mb-4">Teller Cash Recon</h1>
+  </div>
+
+  <div class="container">
+    <div id="accordion">
+      {% for branch, summary in branch_summary.items() %}
+      <div class="card mb-3">
+        <div class="card-header" id="heading-{{ loop.index }}">
+          <div class="row w-100 branch-header">
+            <div class="col-md-3">
+              <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-{{ loop.index }}" aria-expanded="true" aria-controls="collapse-{{ loop.index }}">
+                {{ branch }}
+              </button>
+            </div>
+            <div class="col-md-2 text-center">
+              <strong>GL Balance:</strong> {{ summary.total_balance_q1 | currency }}
+            </div>
+            <div class="col-md-2 text-center">
+              <strong>EZT Balance:</strong> {{ summary.total_balance_q2 | currency }}
+            </div>
+            <div class="col-md-2 text-center">
+              <strong>Branch Limit:</strong> 
+              <span 
+              {% if summary.branch_limit != 'N/A' and summary.total_balance_q1 > summary.branch_limit %}
+                class="bg-warning px-1"
+              {% endif %}>
+              {{ summary.branch_limit | currency }}
+            </span>
+            </div>
+            <div class="col-md-2 text-right">
+              {% if summary.match %}
+                <span class="badge badge-success">Match</span>
+              {% else %}
+                <span class="badge badge-danger">Offage</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div id="collapse-{{ loop.index }}" class="collapse {% if not summary.match %}show{% endif %}" aria-labelledby="heading-{{ loop.index }}">
+          <div class="card-body">
+            <table class="table table-bordered table-hover">
+              <thead class="thead-light">
+                <tr>
+                  <th>Account</th>
+                  <th>GL Balance</th>
+                  <th>EZ Teller Balance</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in summary.accounts %}
+                <tr class="{{ 'match' if row.match else 'mismatch' }}">
+                  <td>{{ row.account }}</td>
+                  <td>
+                    {% if row.table1 %}
+                      <strong>Balance:</strong> {{ row.table1[3] | currency }}<br>
+                      <strong>Date:</strong> {{ row.table1[4] }}
+                    {% else %}
+                      <em>Missing</em>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if row.table2 %}
+                      <strong>Balance:</strong> {{ row.table2[3] | currency }}<br>
+                      <strong>Date:</strong> {{ row.table2[4] }}
+                    {% else %}
+                      <em>Missing</em>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if row.match %}
+                      <span class="badge badge-success">Match</span>
+                    {% else %}
+                      <span class="badge badge-danger">Offage</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% set action = actions.get(row.account) %}
+                    {% if action %}
+                      <span class="badge badge-info" data-toggle="tooltip" title="{{ action.note }}">
+                        {{ action.user }} ({{ action.timestamp }})
+                      </span>
+                    {% elif not row.match %}
+                      <a href="{{ url_for('record', account=row.account, report_date=report_date) }}" class="btn btn-sm btn-warning">
+                        Make Note
+                      </a>
+                    {% endif %}
+                  </td>                    
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Optional Bootstrap JS and dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    $(document).ready(function(){
+      $('[data-toggle="tooltip"]').tooltip(); 
+    });
+  </script>
+  
+</body>
+</html>
